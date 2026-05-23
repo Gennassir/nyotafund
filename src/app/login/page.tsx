@@ -39,18 +39,15 @@ export default function LoginPage() {
       if (error) {
         console.error('Login error:', error);
         alert(error.message || 'Login failed. Please try again.');
+        setSubmitting(false);
         return;
       }
 
-      // Small delay to ensure session is established, then redirect
-      setTimeout(() => {
-        router.push('/loans');
-        router.refresh();
-      }, 100);
+      // Login successful - redirect to loans page
+      window.location.href = '/loans';
     } catch (err) {
       console.error('Login exception:', err);
       alert('An unexpected error occurred. Please try again.');
-    } finally {
       setSubmitting(false);
     }
   };

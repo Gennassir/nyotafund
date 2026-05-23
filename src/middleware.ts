@@ -7,6 +7,11 @@ const protectedRoutes = ['/loans', '/apply', '/calculator', '/how-it-works', '/t
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Never protect API routes
+  if (pathname.startsWith('/api')) {
+    return NextResponse.next();
+  }
+
   // Allow public routes (exact match or starts with)
   if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
@@ -75,6 +80,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
