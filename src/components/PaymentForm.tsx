@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import SuccessTick from '@/components/SuccessTick';
+import PaymentStatusIcon from '@/components/PaymentStatusIcon';
+import { useMpesaPayment } from '@/hooks/useMpesaPayment';
 
 type PaymentFormProps = {
   defaultAmount?: number;
@@ -13,8 +14,6 @@ type PaymentFormProps = {
   title?: string;
   description?: string;
 };
-
-type PaymentState = 'idle' | 'sending' | 'waiting' | 'success' | 'failed';
 
 export default function PaymentForm({
   defaultAmount,
@@ -29,125 +28,43 @@ export default function PaymentForm({
     defaultAmount ? String(Math.round(defaultAmount)) : ''
   );
   const [phone, setPhone] = useState(defaultPhone);
-  const [state, setState] = useState<PaymentState>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [reference, setReference] = useState<string | null>(null);
-  const [providerReference, setProviderReference] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { state, error, reference, providerReference, initiatePayment, reset } =
+    useMpesaPayment();
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
+  useEffect(() => {
+    if (defaultAmount) {
+      setAmount(String(Math.round(defaultAmount)));
     }
-  }, []);
+  }, [defaultAmount]);
 
-  useEffect(() => () => stopPolling(), [stopPolling]);
-
-  const pollStatus = useCallback(
-    (payheroReference: string) => {
-      stopPolling();
-      let attempts = 0;
-
-      pollRef.current = setInterval(async () => {
-        attempts += 1;
-        try {
-          const res = await fetch(
-            `/api/payments/status?reference=${encodeURIComponent(payheroReference)}`
-          );
-          const data = await res.json();
-
-          if (!res.ok) {
-            throw new Error(data.error || 'Could not verify payment.');
-          }
-
-          const status = String(data.status ?? '').toUpperCase();
-          if (status === 'SUCCESS') {
-            stopPolling();
-            setProviderReference(data.providerReference ?? null);
-            setState('success');
-            return;
-          }
-
-          if (status === 'FAILED') {
-            stopPolling();
-            setState('failed');
-            setError('Payment failed or was cancelled. Please try again.');
-            return;
-          }
-
-          if (attempts >= 40) {
-            stopPolling();
-            setState('failed');
-            setError(
-              'Payment is still pending. If you completed it on your phone, check your profile shortly.'
-            );
-          }
-        } catch (pollError) {
-          if (attempts >= 5) {
-            stopPolling();
-            setState('failed');
-            setError(
-              pollError instanceof Error
-                ? pollError.message
-                : 'Could not verify payment status.'
-            );
-          }
-        }
-      }, 3000);
-    },
-    [stopPolling]
-  );
+  useEffect(() => {
+    if (defaultPhone) {
+      setPhone(defaultPhone);
+    }
+  }, [defaultPhone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setState('sending');
-    setReference(null);
-    setProviderReference(null);
-    stopPolling();
-
-    try {
-      const res = await fetch('/api/payments/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: Number(amount),
-          phone,
-          applicationId,
-          purpose,
-          customerName,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to start payment.');
-      }
-
-      setReference(data.reference);
-      setState('waiting');
-      pollStatus(data.reference);
-    } catch (submitError) {
-      setState('failed');
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : 'Failed to start payment.'
-      );
-    }
+    await initiatePayment({
+      amount: Number(amount),
+      phone,
+      applicationId,
+      purpose,
+      customerName,
+    });
   };
 
   if (state === 'success') {
     return (
       <div className="space-y-6">
         <div className="bg-green-600/5 border border-green-600/20 rounded-2xl p-6">
-          <SuccessTick />
-          <p className="text-center text-textlight mt-4">
-            Your M-Pesa payment was received successfully.
-          </p>
+          <PaymentStatusIcon
+            variant="success"
+            title="Success"
+            description="Your M-Pesa payment was received successfully."
+          />
           {providerReference && (
-            <p className="text-center text-sm text-textlight mt-2">
+            <p className="text-center text-sm text-textlight -mt-2">
               M-Pesa code: <span className="font-semibold text-primary">{providerReference}</span>
             </p>
           )}
@@ -163,6 +80,48 @@ export default function PaymentForm({
         >
           Back to Profile
         </Link>
+      </div>
+    );
+  }
+
+  if (state === 'failed') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <PaymentStatusIcon
+            variant="failed"
+            title="Failed"
+            description={error ?? 'Payment could not be completed.'}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="w-full bg-gradient-to-r from-accent to-accentDark text-white font-bold py-3 px-6 rounded-xl"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  if (state === 'cancelled') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+          <PaymentStatusIcon
+            variant="cancelled"
+            title="Cancelled"
+            description={error ?? 'You cancelled the payment on your phone.'}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="w-full bg-gradient-to-r from-accent to-accentDark text-white font-bold py-3 px-6 rounded-xl"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -184,7 +143,7 @@ export default function PaymentForm({
         </div>
       )}
 
-      {error && (
+      {error && state !== 'waiting' && state !== 'sending' && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>

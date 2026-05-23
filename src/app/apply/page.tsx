@@ -1,16 +1,21 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client';
+import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase/client';
 import {
   LOAN_PACKAGES,
   formatPackageOption,
+  getPackageByAmount,
   getProcessingFee,
 } from '@/lib/loan-packages';
-import SuccessTick from '@/components/SuccessTick';
+import MpesaPaymentModal from '@/components/MpesaPaymentModal';
 
-export default function ApplyPage() {
+function ApplyPageContent() {
+  const searchParams = useSearchParams();
+  const packageParam = searchParams.get('package');
+
   const [formData, setFormData] = useState({
     fullName: '',
     idNumber: '',
@@ -48,33 +53,44 @@ export default function ApplyPage() {
     'Kilifi', 'Homa Bay', 'Migori',
   ];
 
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [submittedApplicationId, setSubmittedApplicationId] = useState<string | null>(null);
-  const [submittedMpesa, setSubmittedMpesa] = useState('');
   const [submittedProcessingFee, setSubmittedProcessingFee] = useState<number | null>(null);
+  const [paymentDefaults, setPaymentDefaults] = useState({
+    fullName: '',
+    idNumber: '',
+    mpesaNumber: '',
+  });
+  const [selectedLoanLabel, setSelectedLoanLabel] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!packageParam) return;
+    const amount = Number(packageParam);
+    const pkg = getPackageByAmount(amount);
+    if (pkg) {
+      setFormData((prev) => ({ ...prev, loanAmount: String(pkg.amount) }));
+    }
+  }, [packageParam]);
 
   const selectedProcessingFee = useMemo(
     () => getProcessingFee(formData.loanAmount),
     [formData.loanAmount]
   );
 
+  const selectedPackage = useMemo(
+    () => getPackageByAmount(formData.loanAmount),
+    [formData.loanAmount]
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setShowSuccess(false);
-    setSubmittedApplicationId(null);
-    setSubmittedMpesa('');
-    setSubmittedProcessingFee(null);
+    setIsSubmitting(true);
 
     const processingFee = getProcessingFee(formData.loanAmount);
     if (!processingFee) {
-      alert('Please select a valid loan package.');
-      return;
-    }
-
-    if (!isSupabaseConfigured()) {
-      alert(
-        'Applications cannot be saved: Supabase is not configured. Add environment variables in Vercel.'
-      );
+      alert('Please select a valid loan package (minimum KSh 22,000).');
+      setIsSubmitting(false);
       return;
     }
 
@@ -82,7 +98,7 @@ export default function ApplyPage() {
       const loanAmount = Number(formData.loanAmount);
       const placeholderEmail = `${formData.idNumber.replace(/\s/g, '')}@nyota-applicant.local`;
 
-      const { data, error } = await getSupabase()
+      const { data, error } = await supabase
         .from('loan_applications')
         .insert([
           {
@@ -111,35 +127,25 @@ export default function ApplyPage() {
       if (error) {
         console.error('Error submitting application:', error);
         alert('Error submitting application. Please try again.');
+        setIsSubmitting(false);
         return;
       }
 
       const applicationId = data?.[0]?.id as string | undefined;
       setSubmittedApplicationId(applicationId ?? null);
-      setSubmittedMpesa(formData.mpesaNumber || formData.phoneNumber);
       setSubmittedProcessingFee(processingFee);
-      setShowSuccess(true);
-
-      setFormData({
-        fullName: '',
-        idNumber: '',
-        county: '',
-        phoneNumber: '',
-        dateOfBirth: '',
-        loanType: '',
-        loanAmount: '',
-        loanPurpose: '',
-        monthlyIncome: '',
-        employmentStatus: '',
-        businessName: '',
-        businessType: '',
-        businessDuration: '',
-        mpesaNumber: '',
-        agreeTerms: false,
+      setSelectedLoanLabel(selectedPackage?.label);
+      setPaymentDefaults({
+        fullName: formData.fullName,
+        idNumber: formData.idNumber,
+        mpesaNumber: formData.mpesaNumber || formData.phoneNumber,
       });
+      setPaymentModalOpen(true);
     } catch (error) {
       console.error('Error submitting application:', error);
       alert('Error submitting application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -155,6 +161,18 @@ export default function ApplyPage() {
 
   return (
     <div className="min-h-screen bg-lightbg pt-20">
+      <MpesaPaymentModal
+        open={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        amount={submittedProcessingFee ?? 0}
+        applicationId={submittedApplicationId ?? undefined}
+        purpose="processing_fee"
+        defaultName={paymentDefaults.fullName}
+        defaultIdNumber={paymentDefaults.idNumber}
+        defaultPhone={paymentDefaults.mpesaNumber}
+        loanLabel={selectedLoanLabel}
+      />
+
       <section className="relative bg-gradient-to-br from-primary to-secondary text-white py-16">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
           <h1 className="text-4xl font-bold mb-4 font-government">Apply for Nyota Fund</h1>
@@ -168,22 +186,6 @@ export default function ApplyPage() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-cardbg rounded-3xl shadow-2xl p-8 border border-border">
             <form onSubmit={handleSubmit} className="space-y-8">
-              {showSuccess && submittedProcessingFee && (
-                <div className="bg-green-600/5 border border-green-600/20 rounded-2xl p-4 space-y-4">
-                  <SuccessTick />
-                  <p className="text-center text-textlight text-sm">
-                    Pay the KSh {submittedProcessingFee.toLocaleString()} processing fee for your
-                    selected loan package.
-                  </p>
-                  <Link
-                    href={`/pay?purpose=processing_fee&amount=${submittedProcessingFee}&phone=${encodeURIComponent(submittedMpesa)}${submittedApplicationId ? `&applicationId=${submittedApplicationId}` : ''}`}
-                    className="block w-full text-center bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white font-bold py-3 px-6 rounded-xl transition-all"
-                  >
-                    Pay Processing Fee (M-Pesa)
-                  </Link>
-                </div>
-              )}
-
               <div>
                 <h2 className="text-2xl font-bold text-primary mb-6 font-government">
                   Personal Information
@@ -323,7 +325,7 @@ export default function ApplyPage() {
                       required
                       className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
-                      <option value="">Select loan package</option>
+                      <option value="">Select loan package (from KSh 22,000)</option>
                       {LOAN_PACKAGES.map((pkg) => (
                         <option key={pkg.amount} value={pkg.amount}>
                           {formatPackageOption(pkg)}
@@ -413,9 +415,10 @@ export default function ApplyPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent disabled:opacity-60 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
                 >
-                  Submit Application
+                  {isSubmitting ? 'Submitting...' : 'Submit Application & Pay Fee'}
                 </button>
                 <Link
                   href="/calculator"
@@ -429,5 +432,19 @@ export default function ApplyPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function ApplyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-lightbg pt-20 flex items-center justify-center">
+          <p className="text-primary font-semibold">Loading application form...</p>
+        </div>
+      }
+    >
+      <ApplyPageContent />
+    </Suspense>
   );
 }

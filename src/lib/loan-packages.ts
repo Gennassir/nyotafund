@@ -4,6 +4,9 @@ export type LoanPackage = {
   label: string;
 };
 
+/** Minimum loan package amount (KSh). */
+export const MIN_LOAN_AMOUNT = 22000;
+
 export const LOAN_PACKAGES: LoanPackage[] = [
   { amount: 22000, fee: 180, label: 'KSh 22,000' },
   { amount: 32300, fee: 210, label: 'KSh 32,300' },
@@ -16,12 +19,20 @@ export const LOAN_PACKAGES: LoanPackage[] = [
   { amount: 220000, fee: 580, label: 'KSh 220,000' },
 ];
 
-export function getProcessingFee(loanAmount: number | string): number | null {
+export function getPackageByAmount(loanAmount: number | string): LoanPackage | null {
   const amount = typeof loanAmount === 'string' ? Number(loanAmount) : loanAmount;
-  const pkg = LOAN_PACKAGES.find((p) => p.amount === amount);
-  return pkg?.fee ?? null;
+  if (!Number.isFinite(amount)) return null;
+  return LOAN_PACKAGES.find((p) => p.amount === amount) ?? null;
+}
+
+export function getProcessingFee(loanAmount: number | string): number | null {
+  return getPackageByAmount(loanAmount)?.fee ?? null;
 }
 
 export function formatPackageOption(pkg: LoanPackage): string {
   return `${pkg.label} — processing fee KSh ${pkg.fee.toLocaleString()}`;
+}
+
+export function getApplyUrl(packageAmount: number): string {
+  return `/apply?package=${packageAmount}`;
 }

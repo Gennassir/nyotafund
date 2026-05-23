@@ -152,7 +152,10 @@ export default function LoansPage() {
                   {/* Card Footer */}
                   <div className="px-8 pb-8">
                     <div className="flex space-x-4">
-                      <Link href="/apply" className="flex-1 bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-center">
+                      <Link href="/#loan-packages" className="flex-1 bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-center">
+                        View Packages
+                      </Link>
+                      <Link href="/apply" className="flex-1 bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg text-center">
                         Apply Now
                       </Link>
                       <Link href="/calculator" className="flex-1 bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg text-center">

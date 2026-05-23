@@ -1,36 +1,13 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-let supabaseClient: SupabaseClient | null = null;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined;
 
-export function isSupabaseConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Next will inline env vars at build time; this helps catch misconfiguration.
+  throw new Error(
+    'Missing NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY in environment variables.'
   );
 }
 
-export function getSupabase(): SupabaseClient {
-  if (!isSupabaseConfigured()) {
-    throw new Error(
-      'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment (e.g. Vercel project settings).'
-    );
-  }
-
-  if (!supabaseClient) {
-    supabaseClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!.trim(),
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!.trim()
-    );
-  }
-
-  return supabaseClient;
-}
-
-/** Lazy client — safe to import during build; only throws when used without env vars. */
-export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
-  get(_target, prop) {
-    const client = getSupabase();
-    const value = Reflect.get(client, prop, client);
-    return typeof value === 'function' ? value.bind(client) : value;
-  },
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
