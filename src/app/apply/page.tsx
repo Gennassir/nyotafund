@@ -98,6 +98,10 @@ function ApplyPageContent() {
       const loanAmount = Number(formData.loanAmount);
       const placeholderEmail = `${formData.idNumber.replace(/\s/g, '')}@nyota-applicant.local`;
 
+      // Format date_of_birth for PostgreSQL (YYYY-MM-DD)
+      const formattedDob = formData.dateOfBirth || new Date().toISOString().split('T')[0];
+      const monthlyIncome = parseFloat(formData.monthlyIncome) || 0;
+
       const { data, error } = await supabase
         .from('loan_applications')
         .insert([
@@ -106,14 +110,14 @@ function ApplyPageContent() {
             id_number: formData.idNumber,
             phone_number: formData.phoneNumber,
             email: placeholderEmail,
-            date_of_birth: formData.dateOfBirth,
+            date_of_birth: formattedDob,
             county: formData.county,
             sub_county: '—',
             ward: '—',
             loan_type: formData.loanType,
             loan_amount: loanAmount,
             loan_purpose: formData.loanPurpose,
-            monthly_income: parseFloat(formData.monthlyIncome),
+            monthly_income: monthlyIncome,
             employment_status: formData.employmentStatus,
             business_name: formData.businessName || null,
             business_type: formData.businessType || null,
@@ -126,7 +130,8 @@ function ApplyPageContent() {
 
       if (error) {
         console.error('Error submitting application:', error);
-        alert('Error submitting application. Please try again.');
+        const errMsg = error.message || error.details || JSON.stringify(error);
+        alert(`Error submitting application: ${errMsg}`);
         setIsSubmitting(false);
         return;
       }

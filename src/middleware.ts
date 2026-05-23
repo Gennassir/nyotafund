@@ -1,19 +1,24 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const publicRoutes = ['/', '/login', '/register', '/forgot-password', '/terms', '/privacy'];
+const publicRoutes = ['/login', '/register', '/forgot-password', '/terms', '/privacy'];
 const protectedRoutes = ['/loans', '/apply', '/calculator', '/how-it-works', '/testimonials', '/contact', '/profile', '/pay'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public routes
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  // Allow public routes (exact match or starts with)
+  if (publicRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
+  if (publicRoutes.some(route => pathname.startsWith(route + '/'))) {
     return NextResponse.next();
   }
 
   // Check for protected routes
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+  const isProtected = protectedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
+  
+  if (isProtected) {
     let response = NextResponse.next();
 
     const supabase = createServerClient(

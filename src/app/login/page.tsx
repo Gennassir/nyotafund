@@ -31,21 +31,21 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
-      // Clear any stale sessions first to prevent "Failed to fetch" errors
-      await supabase.auth.signOut({ scope: 'global' });
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
         password: formData.password
       });
 
       if (error) {
-        alert(error.message);
+        console.error('Login error:', error);
+        alert(error.message || 'Login failed. Please try again.');
         return;
       }
 
-      // Redirect to dashboard or loans page on success
       router.push('/loans');
+    } catch (err) {
+      console.error('Login exception:', err);
+      alert('An unexpected error occurred. Please try again.');
     } finally {
       setSubmitting(false);
     }

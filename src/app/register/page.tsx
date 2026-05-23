@@ -44,20 +44,22 @@ export default function RegisterPage() {
       const { data, error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password
-        // You can move extra fields (firstName, lastName, etc) to a `profiles` table later.
       });
 
       if (error) {
-        alert(error.message);
+        console.error('Registration error:', error);
+        alert(error.message || 'Registration failed. Please try again.');
         return;
       }
 
-      // Supabase may require email confirmation depending on your settings.
       alert(
         data?.user
           ? 'Account created successfully. You can now sign in.'
           : 'Check your email to confirm your account before signing in.'
       );
+    } catch (err) {
+      console.error('Registration exception:', err);
+      alert('An unexpected error occurred. Please try again.');
     } finally {
       setSubmitting(false);
     }
