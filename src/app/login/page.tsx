@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,9 +29,16 @@ export default function LoginPage() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (!isSupabaseConfigured()) {
+      alert(
+        'Authentication is not configured on this deployment. Add Supabase environment variables in Vercel.'
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // Clear any stale sessions first to prevent "Failed to fetch" errors
+      const supabase = getSupabase();
       await supabase.auth.signOut({ scope: 'global' });
 
       const { data, error } = await supabase.auth.signInWithPassword({

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import {
   LOAN_PACKAGES,
   formatPackageOption,
@@ -71,11 +71,18 @@ export default function ApplyPage() {
       return;
     }
 
+    if (!isSupabaseConfigured()) {
+      alert(
+        'Applications cannot be saved: Supabase is not configured. Add environment variables in Vercel.'
+      );
+      return;
+    }
+
     try {
       const loanAmount = Number(formData.loanAmount);
       const placeholderEmail = `${formData.idNumber.replace(/\s/g, '')}@nyota-applicant.local`;
 
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('loan_applications')
         .insert([
           {

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 
 type LoanRow = {
@@ -49,7 +49,14 @@ export default function ProfilePage() {
       return;
     }
 
+    if (!isSupabaseConfigured()) {
+      setError('Database is not configured on this deployment.');
+      setFetching(false);
+      return;
+    }
+
     let cancelled = false;
+    const supabase = getSupabase();
 
     const fetchApplications = async () => {
       try {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabase, isSupabaseConfigured } from '@/lib/supabase/client';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -39,9 +39,16 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validateForm()) return;
 
+    if (!isSupabaseConfigured()) {
+      alert(
+        'Authentication is not configured on this deployment. Add Supabase environment variables in Vercel.'
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await getSupabase().auth.signUp({
         email: formData.email.trim(),
         password: formData.password
         // You can move extra fields (firstName, lastName, etc) to a `profiles` table later.
