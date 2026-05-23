@@ -26,40 +26,48 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    let response = NextResponse.next();
+    try {
+      let response = NextResponse.next();
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value;
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+          cookies: {
+            get(name: string) {
+              return request.cookies.get(name)?.value;
+            },
+            set(name: string, value: string, options: CookieOptions) {
+              request.cookies.set({ name, value, ...options });
+              response = NextResponse.next();
+              response.cookies.set({ name, value, ...options });
+            },
+            remove(name: string, options: CookieOptions) {
+              request.cookies.set({ name, value: '', ...options });
+              response = NextResponse.next();
+              response.cookies.set({ name, value: '', ...options });
+            },
           },
-          set(name: string, value: string, options: CookieOptions) {
-            request.cookies.set({ name, value, ...options });
-            response = NextResponse.next();
-            response.cookies.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            request.cookies.set({ name, value: '', ...options });
-            response = NextResponse.next();
-            response.cookies.set({ name, value: '', ...options });
-          },
-        },
+        }
+      );
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // If not logged in, redirect to login
+      if (!user) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', pathname);
+        return NextResponse.redirect(loginUrl);
       }
-    );
 
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // If not logged in, redirect to login
-    if (!user) {
+      return response;
+    } catch (err) {
+      // Log error but don't crash - redirect to login as fallback
+      console.error('Middleware auth error:', err);
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-
-    return response;
   }
 
   return NextResponse.next();

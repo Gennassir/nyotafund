@@ -42,6 +42,7 @@ export default function LoginPage() {
         return;
       }
 
+      // Redirect to loans page on success
       router.push('/loans');
     } catch (err) {
       console.error('Login exception:', err);
@@ -152,8 +153,8 @@ export default function LoginPage() {
             </div>
 
                       </div>
-        </div>
-      </section>
-    </div>
-  );
+          </div>
+        </section>
+      </div>
+    );
 }
