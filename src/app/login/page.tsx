@@ -42,8 +42,11 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirect to loans page on success
-      router.push('/loans');
+      // Small delay to ensure session is established, then redirect
+      setTimeout(() => {
+        router.push('/loans');
+        router.refresh();
+      }, 100);
     } catch (err) {
       console.error('Login exception:', err);
       alert('An unexpected error occurred. Please try again.');
