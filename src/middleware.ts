@@ -17,13 +17,20 @@ export async function middleware(request: NextRequest) {
 
   // Check for protected routes
   const isProtected = protectedRoutes.some(route => pathname === route || pathname.startsWith(route + '/'));
-  
+
   if (isProtected) {
+    // If Supabase env vars are missing, redirect to login (safer than crashing)
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
     let response = NextResponse.next();
 
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
         cookies: {
           get(name: string) {
