@@ -18,6 +18,7 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -41,7 +42,7 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: formData.email.trim(),
         password: formData.password
       });
@@ -52,11 +53,7 @@ export default function RegisterPage() {
         return;
       }
 
-      alert(
-        data?.user
-          ? 'Account created successfully. You can now sign in.'
-          : 'Check your email to confirm your account before signing in.'
-      );
+      setShowSuccess(true);
     } catch (err) {
       console.error('Registration exception:', err);
       alert('An unexpected error occurred. Please try again.');
@@ -78,9 +75,32 @@ export default function RegisterPage() {
     }
   };
 
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-lightbg pt-20 flex items-center justify-center">
+        <div className="bg-cardbg rounded-3xl shadow-2xl p-12 border border-border text-center max-w-md mx-auto">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-primary mb-4 font-government">Account Created!</h2>
+          <p className="text-textlight mb-8">
+            Your account has been created successfully. You can now sign in.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            Sign In Now
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-lightbg pt-20">
-      {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary to-secondary text-white py-16">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
           <h1 className="text-4xl font-bold mb-4 font-government">Create Account</h1>
@@ -90,7 +110,6 @@ export default function RegisterPage() {
         </div>
       </section>
 
-      {/* Registration Form */}
       <section className="py-16 px-6 sm:px-8 lg:px-12">
         <div className="max-w-2xl mx-auto">
           <div className="bg-cardbg rounded-3xl shadow-2xl p-8 border border-border">
@@ -241,8 +260,8 @@ export default function RegisterPage() {
             </div>
 
                       </div>
-        </div>
-      </section>
-    </div>
-  );
+          </div>
+        </section>
+      </div>
+    );
 }
