@@ -58,7 +58,7 @@ export default function RegisterPage() {
       // Password-based direct sign-in — Supabase issues a session token on success
       // so the user is automatically logged in after registering.
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { error: signInError } = await supabase.auth.signIn({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
         password: formData.password,
       });
