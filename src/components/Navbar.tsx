@@ -96,21 +96,6 @@ export default function Navbar() {
             </svg>
           </button>
 
-          {/* Auth Buttons (Desktop) */}
-          {!loading && !user && (
-            <div className="hidden lg:flex items-center space-x-6">
-              <Link href="/login" className="text-accent hover:text-accentDark font-semibold transition-colors font-medium">
-                Login
-              </Link>
-              <Link
-                href="/register"
-                className="bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-md hover:shadow-lg"
-              >
-                Register
-              </Link>
-            </div>
-          )}
-
           {!loading && user && (
             <div className="hidden lg:flex items-center space-x-6">
               <Link
@@ -181,26 +166,7 @@ export default function Navbar() {
               onClick={closeMobile}
             >
               Pay
-            </Link>
-
-            {!loading && !user && (
-              <>
-                <Link
-                  href="/login"
-                  className="text-accent hover:text-accentDark font-semibold transition-colors font-medium pt-3"
-                  onClick={closeMobile}
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-gradient-to-r from-primary to-secondary hover:from-secondary hover:to-primary text-white px-6 py-3 rounded-lg transition-all duration-300 font-semibold shadow-md hover:shadow-lg"
-                  onClick={closeMobile}
-                >
-                  Register
-                </Link>
-              </>
-            )}
+             </Link>
 
             {!loading && user && (
               <>

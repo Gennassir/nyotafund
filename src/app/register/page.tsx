@@ -42,18 +42,35 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // secret: true makes the session available immediately for email confirmation flows
+      const { error: signUpError } = await supabase.auth.signUp({
         email: formData.email.trim(),
-        password: formData.password
+        password: formData.password,
+        options: { emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined }
       });
 
-      if (error) {
-        console.error('Registration error:', error);
-        alert(error.message || 'Registration failed. Please try again.');
+      if (signUpError) {
+        console.error('Registration error:', signUpError);
+        alert(signUpError.message || 'Registration failed. Please try again.');
         return;
       }
 
-      setShowSuccess(true);
+      // Password-based direct sign-in — Supabase issues a session token on success
+      // so the user is automatically logged in after registering.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { error: signInError } = await supabase.auth.signIn({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
+      if (signInError) {
+        console.error('Auto sign-in error:', signInError);
+        // Registration succeeded but session creation failed — fall through to success screen
+        setShowSuccess(true);
+        return;
+      }
+
+      window.location.href = '/';
     } catch (err) {
       console.error('Registration exception:', err);
       alert('An unexpected error occurred. Please try again.');
