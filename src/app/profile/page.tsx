@@ -113,18 +113,9 @@ export default function ProfilePage() {
             </p>
           </div>
 
-          {!loading && !user && (
+          {!user && (
             <div className="bg-cardbg rounded-3xl shadow-xl p-8 border border-border">
-              <p className="text-textlight">
-                You are not signed in.{' '}
-                <Link
-                  href="/login"
-                  className="text-accent hover:text-accentDark font-semibold transition-colors"
-                >
-                  Sign in
-                </Link>{' '}
-                to view your loan tracking.
-              </p>
+              <p className="text-textlight">Sign in to your account to view your loan tracking.</p>
             </div>
           )}
 
