@@ -64,6 +64,12 @@ function ApplyPageContent() {
   });
   const [selectedLoanLabel, setSelectedLoanLabel] = useState<string | undefined>();
 
+  const isLoanPackageLocked = useMemo(() => {
+    if (!packageParam) return false;
+    const amount = Number(packageParam);
+    return getPackageByAmount(amount) !== null;
+  }, [packageParam]);
+
   useEffect(() => {
     if (!packageParam) return;
     const amount = Number(packageParam);
@@ -328,7 +334,8 @@ function ApplyPageContent() {
                       value={formData.loanAmount}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                      disabled={isLoanPackageLocked}
+                      className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                       <option value="">Select loan package (from KSh 22,000)</option>
                       {LOAN_PACKAGES.map((pkg) => (

@@ -30,7 +30,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
                 <Link
-                  href="/apply"
+                  href="/#loan-packages"
                   className="bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent text-white font-bold py-4 px-10 rounded-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 text-lg"
                 >
                   Apply for Loan
