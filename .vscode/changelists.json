@@ -3,11 +3,8 @@
     {
       "name": "Default",
       "files": [
-        "src/app/apply/page.tsx",
-        "src/lib/supabase/client.ts",
-        ".vscode/changelists.json",
-        "src/components/AuthProvider.tsx",
-        "tsconfig.json"
+        "tsconfig.json",
+        ".vscode/changelists.json"
       ]
     }
   ],
