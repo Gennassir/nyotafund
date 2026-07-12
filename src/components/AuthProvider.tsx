@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const authSubscription = supabase.auth.onAuthStateChange?.((_event, session) => {
       if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      authSubscription?.data?.subscription?.unsubscribe?.();
     };
   }, []);
 

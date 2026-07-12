@@ -14,8 +14,7 @@ function createSupabaseBrowserClient(): SupabaseClient {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Return a mock client that returns errors gracefully
-    return createClient('https://placeholder.supabase.co', 'placeholder-key');
+    throw new Error('Supabase credentials are not configured.');
   }
 
   return createClient(supabaseUrl, supabaseAnonKey);
@@ -29,32 +28,10 @@ export function getSupabase(): SupabaseClient {
   return supabaseClient;
 }
 
-/**
- * Back-compat export. Access is deferred until first use so `next build` does not
- * throw when env vars are missing during prerender.
- */
 export const supabase: SupabaseClient = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    try {
-      const client = getSupabase();
-      const value = Reflect.get(client, prop, client);
-      return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(client) : value;
-    } catch {
-      // Return a no-op function for methods if client creation fails
-      if (prop === 'auth') {
-        return {
-          signInWithPassword: async () => ({ data: { user: null }, error: { message: 'Configuration error. Please contact support.' } }),
-          signUp: async () => ({ data: { user: null }, error: { message: 'Configuration error. Please contact support.' } }),
-          signOut: async () => {},
-        };
-      }
-      if (prop === 'from') {
-        return () => ({
-          insert: async () => ({ data: [], error: { message: 'Configuration error. Please contact support.' } }),
-          select: async () => ({ data: [], error: null }),
-        });
-      }
-      return undefined;
-    }
+    const client = getSupabase();
+    const value = Reflect.get(client, prop, client);
+    return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(client) : value;
   },
 });

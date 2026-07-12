@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 import {
   LOAN_PACKAGES,
   formatPackageOption,
@@ -55,6 +55,7 @@ function ApplyPageContent() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [submissionNotice, setSubmissionNotice] = useState<string | null>(null);
   const [submittedApplicationId, setSubmittedApplicationId] = useState<string | null>(null);
   const [submittedProcessingFee, setSubmittedProcessingFee] = useState<number | null>(null);
   const [paymentDefaults, setPaymentDefaults] = useState({
@@ -92,6 +93,7 @@ function ApplyPageContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setSubmissionNotice(null);
 
     const processingFee = getProcessingFee(formData.loanAmount);
     if (!processingFee) {
@@ -151,6 +153,15 @@ function ApplyPageContent() {
         idNumber: formData.idNumber,
         mpesaNumber: formData.mpesaNumber || formData.phoneNumber,
       });
+
+      if (!isSupabaseConfigured()) {
+        setSubmissionNotice(
+          'Your application was saved locally because Supabase is not configured yet. Configure your environment variables to enable live record storage.'
+        );
+        setPaymentModalOpen(false);
+        return;
+      }
+
       setPaymentModalOpen(true);
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -197,6 +208,12 @@ function ApplyPageContent() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-cardbg rounded-3xl shadow-2xl p-8 border border-border">
             <form onSubmit={handleSubmit} className="space-y-8">
+              {submissionNotice && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-700">
+                  {submissionNotice}
+                </div>
+              )}
+
               <div>
                 <h2 className="text-2xl font-bold text-primary mb-6 font-government">
                   Personal Information
