@@ -57,8 +57,8 @@ export default function Home() {
                 Choose Your Loan Amount
               </h2>
               <p className="text-xl text-textlight max-w-3xl mx-auto leading-relaxed font-light">
-                Select a package below to start your application. Each package includes a one-time
-                processing fee paid via M-Pesa. Loans from KSh{' '}
+                 Select a package below to start your application. Each package includes a one-time
+                 processing fee. Loans from KSh{' '}
                 {MIN_LOAN_AMOUNT.toLocaleString()} upwards.
               </p>
             </div>
@@ -153,10 +153,9 @@ export default function Home() {
         <section className="py-20 px-6 sm:px-8 lg:px-12 bg-cardbg border-y border-border">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-4xl font-bold text-primary mb-4 font-government">Ready to Apply?</h2>
-            <p className="text-lg text-textlight mb-8">
-              Complete your application online, then pay the processing fee securely via M-Pesa STK
-              push.
-            </p>
+             <p className="text-lg text-textlight mb-8">
+               Complete your application online to get started.
+             </p>
             <Link
               href="/apply"
               className="inline-block bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent text-white font-bold py-4 px-10 rounded-xl transition-all duration-300 shadow-xl"

@@ -50,9 +50,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   amount DECIMAL(15, 2) NOT NULL,
   transaction_id VARCHAR(100),
   external_reference VARCHAR(100),
-  payhero_reference VARCHAR(100),
   provider_reference VARCHAR(100),
-  payment_purpose VARCHAR(50) DEFAULT 'loan_repayment',
   status VARCHAR(20) DEFAULT 'pending',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -61,9 +59,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Run if upgrading an existing database:
 -- ALTER TABLE transactions ALTER COLUMN application_id DROP NOT NULL;
 -- ALTER TABLE transactions ADD COLUMN IF NOT EXISTS external_reference VARCHAR(100);
--- ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payhero_reference VARCHAR(100);
 -- ALTER TABLE transactions ADD COLUMN IF NOT EXISTS provider_reference VARCHAR(100);
--- ALTER TABLE transactions ADD COLUMN IF NOT EXISTS payment_purpose VARCHAR(50) DEFAULT 'loan_repayment';
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

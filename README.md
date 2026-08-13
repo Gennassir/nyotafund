@@ -7,7 +7,6 @@ A Next.js application replicating the official NYOTA Fund government youth empow
 - **Personal Information Form**: Collects user details as they appear on National ID
 - **Loan Purpose Selection**: Multiple options including business startup, expansion, education, medical, and emergency needs
 - **Amount Selection**: Choose from KSh 50,000 to KSh 220,000 grants
-- **M-Pesa Integration**: Payment processing simulation
 - **Responsive Design**: Mobile-first approach with Tailwind CSS
 - **Government Styling**: Professional appearance matching the official portal
 
@@ -55,7 +54,6 @@ next.config.js          # Next.js configuration
 - ✅ Interactive form with state management
 - ✅ Responsive grid layouts for features and options
 - ✅ Professional government-style UI
-- ✅ M-Pesa payment simulation
 - ✅ Form validation and user feedback
 - ✅ Hover effects and transitions
 - ✅ Mobile-responsive design

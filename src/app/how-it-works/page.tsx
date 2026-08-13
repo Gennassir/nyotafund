@@ -30,7 +30,7 @@ export default function HowItWorksPage() {
     {
       number: 5,
       title: 'Receive Funds',
-      description: 'Approved funds are disbursed directly to your M-Pesa account within minutes.'
+      description: 'Approved funds are disbursed directly to your account within minutes.'
     }
   ];
 

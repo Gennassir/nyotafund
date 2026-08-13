@@ -21,7 +21,7 @@ function PayPageContent() {
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h1 className="text-4xl font-bold mb-4 font-government">Make a Payment</h1>
           <p className="text-lg font-light">
-            Secure M-Pesa payments powered by PayHero
+            Secure M-Pesa payments powered by UpesiPay
           </p>
         </div>
       </section>

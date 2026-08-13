@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useState } from 'react';
 import PaymentStatusIcon from '@/components/PaymentStatusIcon';
-import { useMpesaPayment } from '@/hooks/useMpesaPayment';
+import { useMpesaPayment, MpesaPaymentState } from '@/hooks/useMpesaPayment';
 
 type MpesaPaymentModalProps = {
   open: boolean;
@@ -28,220 +27,172 @@ export default function MpesaPaymentModal({
   defaultPhone = '',
   loanLabel,
 }: MpesaPaymentModalProps) {
-  const [fullName, setFullName] = useState(defaultName);
-  const [idNumber, setIdNumber] = useState(defaultIdNumber);
-  const [mpesaNumber, setMpesaNumber] = useState(defaultPhone);
   const { state, error, reference, providerReference, initiatePayment, reset } =
     useMpesaPayment();
 
-  useEffect(() => {
-    if (open) {
-      setFullName(defaultName);
-      setIdNumber(defaultIdNumber);
-      setMpesaNumber(defaultPhone);
-      reset();
-    }
-  }, [open, defaultName, defaultIdNumber, defaultPhone, reset]);
+  const [mpesaNumber, setMpesaNumber] = useState(defaultPhone);
 
   if (!open) return null;
 
-  const handleClose = () => {
-    if (state === 'waiting' || state === 'sending') return;
-    reset();
-    onClose();
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    void initiatePayment({
-      amount,
+    await initiatePayment({
       phone: mpesaNumber,
+      amount,
       applicationId,
       purpose,
-      customerName: fullName.trim() || undefined,
     });
   };
 
-  const isTerminal = state === 'success' || state === 'failed' || state === 'cancelled';
+  const handleClose = () => {
+    reset();
+    setMpesaNumber(defaultPhone);
+    onClose();
+  };
+
+  const getStatusVariant = (currentState: MpesaPaymentState): 'success' | 'failed' | 'cancelled' => {
+    if (currentState === 'success') return 'success';
+    if (currentState === 'cancelled') return 'cancelled';
+    return 'failed';
+  };
+
+  const getStatusDescription = (currentState: MpesaPaymentState): string => {
+    if (currentState === 'success') {
+      if (purpose === 'processing_fee' && loanLabel) {
+        return `Your processing fee for ${loanLabel} was received successfully. Your application will be reviewed shortly.`;
+      }
+      return 'Your M-Pesa payment was received successfully.';
+    }
+    if (currentState === 'cancelled') {
+      return error ?? 'You cancelled the payment on your phone.';
+    }
+    return error ?? 'Payment could not be completed. Please try again.';
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="mpesa-modal-title"
-    >
-      <div className="bg-cardbg rounded-3xl shadow-2xl w-full max-w-md border border-border overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-secondary/5">
-          <h2 id="mpesa-modal-title" className="text-lg font-bold text-primary font-government">
-            M-Pesa Payment
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-cardbg rounded-3xl shadow-2xl p-8 border border-border max-w-md w-full">
+        <div className="flex items-center justify-between mb-6">
+          <h2 id="mpesa-modal-title" className="text-xl font-bold text-primary font-government">
+            {purpose === 'processing_fee' ? 'Pay Processing Fee' : 'M-Pesa Payment'}
           </h2>
           <button
-            type="button"
             onClick={handleClose}
-            disabled={state === 'waiting' || state === 'sending'}
-            className="text-textlight hover:text-primary disabled:opacity-40 p-1 rounded-lg"
-            aria-label="Close"
+            disabled={state === 'sending' || state === 'waiting'}
+            className="text-textlight hover:text-primary transition-colors disabled:opacity-50"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-6">
-          {loanLabel && state === 'idle' && (
-            <p className="text-sm text-textlight mb-4 text-center">
-              {loanLabel} — pay <span className="font-semibold text-accent">KSh {amount.toLocaleString()}</span>{' '}
-              processing fee
-            </p>
-          )}
-
-          {state === 'success' && (
-            <div className="space-y-4">
-              <PaymentStatusIcon
-                variant="success"
-                title="Success"
-                description="Your M-Pesa payment was received successfully."
-              />
-              {providerReference && (
-                <p className="text-center text-sm text-textlight">
-                  M-Pesa code:{' '}
-                  <span className="font-semibold text-primary">{providerReference}</span>
-                </p>
+        {(state === 'success' || state === 'failed' || state === 'cancelled') && (
+          <div className="mb-6">
+            <PaymentStatusIcon variant={getStatusVariant(state)} description={getStatusDescription(state)} />
+            {state === 'success' && providerReference && (
+              <p className="mt-2 text-sm text-gray-500 text-center">
+                M-Pesa code:{' '}
+                <span className="font-semibold text-primary">{providerReference}</span>
+              </p>
+            )}
+            <div className="mt-6 flex gap-3">
+              {(state === 'failed' || state === 'cancelled') && (
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="flex-1 bg-accent text-white font-bold py-3 px-6 rounded-xl hover:bg-accentDark transition-colors"
+                >
+                  Try Again
+                </button>
               )}
-              <Link
-                href="/profile"
-                className="block w-full text-center bg-gradient-to-r from-accent to-accentDark text-white font-bold py-3 px-6 rounded-xl"
-              >
-                View Profile
-              </Link>
               <button
                 type="button"
                 onClick={handleClose}
-                className="block w-full text-center text-primary font-semibold py-2"
+                className="flex-1 bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white font-bold py-3 px-6 rounded-xl transition-colors"
               >
                 Close
               </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {state === 'failed' && (
-            <div className="space-y-4">
-              <PaymentStatusIcon
-                variant="failed"
-                title="Failed"
-                description={error ?? 'Payment could not be completed. Please try again.'}
+        {(state === 'idle' || state === 'sending' || state === 'waiting') && (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {purpose === 'processing_fee' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={defaultName}
+                    readOnly
+                    className="w-full px-4 py-3 border border-border rounded-xl bg-gray-50 text-gray-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">ID Number</label>
+                  <input
+                    type="text"
+                    value={defaultIdNumber}
+                    readOnly
+                    className="w-full px-4 py-3 border border-border rounded-xl bg-gray-50 text-gray-600"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">M-Pesa Number *</label>
+              <input
+                type="tel"
+                value={mpesaNumber}
+                onChange={(e) => setMpesaNumber(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="07XX XXX XXX"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Amount (KSh)</label>
+              <div className="w-full px-4 py-3 border border-border rounded-xl bg-gray-50 text-gray-700 font-semibold">
+                KSh {amount.toLocaleString()}
+              </div>
+            </div>
+
+            {reference && state === 'waiting' && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
+                <p className="font-semibold mb-1">Waiting for M-Pesa confirmation</p>
+                <p>
+                  Check your phone <span className="font-semibold">{mpesaNumber}</span> and enter your
+                  M-Pesa PIN to approve KSh {amount.toLocaleString()}.
+                </p>
+                <p className="mt-2 text-xs text-amber-600">
+                  Reference: {reference}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => reset()}
-                className="w-full bg-gradient-to-r from-accent to-accentDark text-white font-bold py-3 px-6 rounded-xl"
+                onClick={handleClose}
+                disabled={state === 'sending' || state === 'waiting'}
+                className="flex-1 bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50"
               >
-                Try Again
+                Cancel
               </button>
-            </div>
-          )}
-
-          {state === 'cancelled' && (
-            <div className="space-y-4">
-              <PaymentStatusIcon
-                variant="cancelled"
-                title="Cancelled"
-                description={error ?? 'You cancelled the payment on your phone.'}
-              />
-              <button
-                type="button"
-                onClick={() => reset()}
-                className="w-full bg-gradient-to-r from-accent to-accentDark text-white font-bold py-3 px-6 rounded-xl"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {(state === 'waiting' || state === 'sending') && (
-            <div className="space-y-4 text-center py-4">
-              <div className="w-16 h-16 mx-auto rounded-full border-4 border-accent/30 border-t-accent animate-spin" />
-              <p className="text-primary font-semibold">
-                {state === 'sending' ? 'Sending STK push...' : 'Waiting for M-Pesa confirmation'}
-              </p>
-              <p className="text-sm text-textlight">
-                Check your phone <span className="font-semibold">{mpesaNumber}</span> and enter your
-                M-Pesa PIN to approve KSh {amount.toLocaleString()}.
-              </p>
-              {reference && (
-                <p className="text-xs text-textlight">Reference: {reference}</p>
-              )}
-            </div>
-          )}
-
-          {state === 'idle' && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <p className="text-sm text-textlight text-center">
-                Enter your details to receive an STK push on your phone.
-              </p>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="As on National ID"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  ID Number *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={idNumber}
-                  onChange={(e) => setIdNumber(e.target.value)}
-                  className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="National ID number"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  M-Pesa Number *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={mpesaNumber}
-                  onChange={(e) => setMpesaNumber(e.target.value)}
-                  className="w-full px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="07XX XXX XXX"
-                />
-              </div>
-
-              <div className="rounded-xl bg-primary/5 border border-primary/15 p-3 text-center">
-                <p className="text-xs text-textlight uppercase tracking-wide">Amount to pay</p>
-                <p className="text-2xl font-bold text-primary">KSh {amount.toLocaleString()}</p>
-              </div>
-
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-accent to-accentDark text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
+                disabled={state === 'sending' || state === 'waiting'}
+                className="flex-1 bg-gradient-to-r from-accent to-accentDark hover:from-accentDark hover:to-accent disabled:opacity-60 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
               >
-                Pay with M-Pesa
+                {state === 'sending' ? 'Sending STK push...' : state === 'waiting' ? 'Waiting...' : 'Pay Now'}
               </button>
-            </form>
-          )}
-
-          {error && !isTerminal && state !== 'waiting' && state !== 'sending' && (
-            <p className="mt-3 text-sm text-red-600 text-center">{error}</p>
-          )}
-        </div>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

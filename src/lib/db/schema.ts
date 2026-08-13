@@ -44,9 +44,7 @@ export interface Transaction {
   amount: number;
   transactionId?: string;
   externalReference?: string;
-  payheroReference?: string;
   providerReference?: string;
-  paymentPurpose?: 'loan_repayment' | 'processing_fee';
   status: 'pending' | 'completed' | 'failed';
   createdAt: string;
   updatedAt: string;

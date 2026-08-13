@@ -26,9 +26,9 @@ export default function TermsPage() {
             </p>
 
             <h2 className="text-2xl font-bold text-primary mb-4 font-government">Loan Processing Fee</h2>
-            <p className="text-textlight mb-4">
-              All loan applications require a non-refundable processing fee payable via M-Pesa before application review.
-            </p>
+             <p className="text-textlight mb-4">
+               All loan applications require a non-refundable processing fee.
+             </p>
 
             <h2 className="text-2xl font-bold text-primary mb-4 font-government">Eligibility</h2>
             <p className="text-textlight">

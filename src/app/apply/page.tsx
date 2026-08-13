@@ -4,13 +4,13 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
+import MpesaPaymentModal from '@/components/MpesaPaymentModal';
 import {
   LOAN_PACKAGES,
   formatPackageOption,
   getPackageByAmount,
   getProcessingFee,
 } from '@/lib/loan-packages';
-import MpesaPaymentModal from '@/components/MpesaPaymentModal';
 
 function ApplyPageContent() {
   const searchParams = useSearchParams();
